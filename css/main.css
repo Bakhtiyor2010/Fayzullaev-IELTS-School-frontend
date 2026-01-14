@@ -66,7 +66,7 @@ nav a {
 
 .content {
     flex: 1;
-    min-width: 300px;
+    min-width: 200px;
     background: #fff;
     border-radius: 10px;
     padding: 20px;
@@ -264,5 +264,16 @@ th {
 @media (min-width: 1001px) {
     #sendAllBtn {
         display: none;
+    }
+}
+
+@media (max-width: 400px) {
+    .message-box {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .message-box button {
+        flex: 1;
     }
 }
