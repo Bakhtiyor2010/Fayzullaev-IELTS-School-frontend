@@ -5,7 +5,7 @@ const API_GROUPS =
 const API_ATTENDANCE =
   "https://successful-grace-production-5eea.up.railway.app/api/attendance";
 const API_SEND_MESSAGE =
-  "https://successful-grace-production-5eea.up.railway.app/api/send-message";
+  "https://successful-grace-production-5eea.up.railway.app/api/attendance";
 
 let users = [];
 let attendance = {};
@@ -170,21 +170,22 @@ async function markAttendance(userId, status) {
   attendance[userId] = status;
   renderTable();
 
-  const dateStr = new Date().toLocaleDateString();
-
   try {
-    await fetch(API_SEND_MESSAGE, {
+    const res = await fetch(API_ATTENDANCE, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        userIds: [userId],
-        message: `Siz bugun ${
-          status === "present" ? "KELDINGIZ" : "KELMADINGIZ"
-        } (${dateStr})`,
+        userId,           // foydalanuvchi id
+        groupId: currentGroupId, // hozirgi guruh id
+        status            // present / absent
       }),
     });
+
+    const data = await res.json();
+    if (!res.ok) alert(data.error || "Failed to save attendance");
   } catch (err) {
-    alert("Failed to send message");
+    console.error(err);
+    alert("Server error");
   }
 }
 
