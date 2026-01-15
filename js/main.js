@@ -25,6 +25,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (ADMIN_ROLE === "moderator" || ADMIN_ROLE === "admin") {
     const paymentSection = document.getElementById("paymentSection");
     if (paymentSection) paymentSection.style.display = "none";
+
+    // Moderator/Admin uchun Group input va Create buttonni yashirish
+    const groupInput = document.getElementById("groupInput");
+    const createBtn = document.querySelector('button[onclick="createGroup()"]');
+    if (groupInput) groupInput.style.display = "none";
+    if (createBtn) createBtn.style.display = "none";
   }
 
   await loadGroups();
@@ -293,7 +299,7 @@ async function sendMessage() {
     // Foydalanuvchining ismi/familiyasi bilan xabar yaratish
     const messages = usersToSend.map(u => ({
       userId: u._id,
-      message: `Salom, hurmatli ${u.name || ""} ${u.surname || ""}!\n${text}`
+      message: `Salom, hurmatli ${u.name || ""} ${u.surname || ""}!\n\n${text}`
     }));
 
     // Har bir foydalanuvchi uchun POST yuborish
@@ -325,7 +331,7 @@ async function sendToAll() {
   try {
     const messages = users.map(u => ({
       userId: u._id,
-      message: `Salom, hurmatli ${u.name || ""} ${u.surname || ""}!\n${text}`
+      message: `Salom, hurmatli ${u.name || ""} ${u.surname || ""}!\n\n${text}`
     }));
 
     for (const msgObj of messages) {
