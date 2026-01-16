@@ -145,6 +145,19 @@ async function loadUsers() {
   }
 }
 
+// 🔹 DD/MM/YYYY formatlash funksiyasi
+function formatDate(date) {
+  if (!date) return "-";
+  const d = new Date(date);
+  if (isNaN(d)) return "-";
+
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+
+  return `${day}/${month}/${year}`;
+}
+
 function renderTable() {
   tableBody.innerHTML = "";
   if (!users.length) {
@@ -152,22 +165,21 @@ function renderTable() {
     return;
   }
 
-  users.forEach((u, index) => {
+  // 🔹 To‘laganlarni oxiriga chiqarish
+  const sortedUsers = [...users].sort((a, b) => (a.isPaid === b.isPaid ? 0 : a.isPaid ? 1 : -1));
+
+  sortedUsers.forEach((u, index) => {
     const isChecked = selectedUsers.has(u.id);
     const tr = document.createElement("tr");
 
     if (isChecked) tr.classList.add("selected");
 
-    const phone = u.phone
-      ? u.phone.startsWith("+998")
-        ? u.phone
-        : "+998" + u.phone
-      : "N/A";
+    const phone = u.phone ? (u.phone.startsWith("+998") ? u.phone : "+998" + u.phone) : "N/A";
 
-    // Payment status matni
+    // 🔹 Payment status va rang
     let paymentStatus = "To‘lanmagan";
-    if (u.isPaid) {
-      paymentStatus = `${u.startDate?.toLocaleDateString() || "-"} - ${u.endDate?.toLocaleDateString() || "-"}`;
+    if (u.isPaid && u.startDate && u.endDate) {
+      paymentStatus = `${formatDate(u.startDate)} - ${formatDate(u.endDate)}`;
       tr.style.background = "#d4edda"; // yashil
     } else {
       tr.style.background = "#f8d7da"; // qizil
@@ -180,9 +192,9 @@ function renderTable() {
       <td>${u.surname || "-"}</td>
       <td><a href="tel:${phone}">${phone}</a></td>
       <td>
-        <button class="att-btn present-btn" style="background:#28a745;" onclick="setPaid('${u.id}')">Paid</button>
-        <button class="att-btn absent-btn" style="background:#dc3545;" onclick="setUnpaid('${u.id}')">Unpaid</button>
-        <button class="delete-btn" style="background:#ffc107;" onclick="deletePayment('${u.id}')">Delete Payment</button>
+        <button class="att-btn present-btn" style="background:#28a745;" onclick="setPaid('${u.id}')">To‘langan</button>
+        <button class="att-btn absent-btn" style="background:#dc3545;" onclick="setUnpaid('${u.id}')">To‘lanmagan</button>
+        <button class="delete-btn" style="background:#ffc107;" onclick="deletePayment('${u.id}')">O‘chirish</button>
       </td>
       <td>${paymentStatus}</td>
     `;
