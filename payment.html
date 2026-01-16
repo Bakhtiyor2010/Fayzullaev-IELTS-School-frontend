@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="shortcut icon" href="./images/logo.jpg" type="image/x-icon">
-  <title>Admin Panel</title>
-  <link rel="stylesheet" href="./css/main.css">
-  <script src="./js/main.js" defer="true"></script>
+  <title>Payment Panel</title>
+  <link rel="stylesheet" href="./css/payment.css">
+  <script src="./js/payment.js" defer="true"></script>
 </head>
 <body>
   <nav>
-    <a>Attendance</a>
-    <a href="payment.html" style="border: 1px solid white; padding: 8px 16px; border-radius: 4px;" id="paymentSection">Payment</a>
+    <a>Payment</a>
+    <a href="admin.html" style="border: 1px solid white; padding: 8px 16px; border-radius: 4px;" id="paymentSection">Attendance</a>
     <a href="index.html" style="border: 1px solid white; padding: 8px 16px; border-radius: 4px;">Log out</a>
   </nav>
 
@@ -19,8 +19,8 @@
     <!-- GROUPS -->
     <aside class="groups">
       <h2>Groups</h2>
-      <input id="groupInput" placeholder="Group name">
-      <button onclick="createGroup()">Create group</button>
+      <!-- <input id="groupInput" placeholder="Group name">
+      <button onclick="createGroup()">Create group</button> -->
       <hr>
       <div id="groupLoader" style="display:none;text-align:center;">Loading groups...</div>
       <div id="groupList"></div>
@@ -44,8 +44,8 @@
             <th>Name</th>
             <th>Surname</th>
             <th>Phone</th>
-            <th>Attendance</th>
-            <th>Actions</th>
+            <th>Payment</th>
+            <th>Payment Status</th>
           </tr>
         </thead>
         <tbody id="tableBody">
