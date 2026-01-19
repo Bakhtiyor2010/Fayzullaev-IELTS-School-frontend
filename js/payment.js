@@ -28,6 +28,14 @@ async function loadGroups() {
     // Firestore uchun: doc.id dan foydalanish
     groups = data.map((g) => ({ ...g, id: g.id || g._id }));
 
+    // ------------------- ALPHABETIC SORT -------------------
+    groups.sort((a, b) => {
+      if (a.name.toLowerCase() < b.name.toLowerCase()) return -1;
+      if (a.name.toLowerCase() > b.name.toLowerCase()) return 1;
+      return 0;
+    });
+    // --------------------------------------------------------
+
     // Agar guruhlar bo'sh bo'lsa
     if (groups.length === 0) {
       groupList.innerHTML = `<div style="text-align:center;color:gray;">No groups</div>`;
@@ -81,6 +89,7 @@ function renderGroups() {
       editBtn.style.background = "#ffc107";
       editBtn.style.padding = "10px 20px";
       editBtn.style.marginLeft = "5px";
+      editBtn.style.width = "fit-content";
       editBtn.onclick = () => editGroupPrompt(g.id);
 
       const delBtn = document.createElement("button");
@@ -88,6 +97,7 @@ function renderGroups() {
       delBtn.style.background = "#dc3545";
       delBtn.style.padding = "10px 20px";
       delBtn.style.marginLeft = "5px";
+      delBtn.style.width = "fit-content";
       delBtn.onclick = () => deleteGroup(g.id);
 
       div.appendChild(editBtn);
