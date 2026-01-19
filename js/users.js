@@ -78,8 +78,8 @@ function renderTable() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${index + 1}</td>
-      <td>${u.firstName}</td>
       <td>${u.lastName}</td>
+      <td>${u.firstName}</td>
       <td><a href="tel:${u.phone}">${u.phone}</a></td>
       <td>${u.groupName}</td>
       <td>

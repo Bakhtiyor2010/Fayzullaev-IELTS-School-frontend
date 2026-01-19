@@ -26,10 +26,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const groupInput = document.getElementById("groupInput");
     const createBtn = document.querySelector('button[onclick="createGroup()"]');
-    const userAuthorization = document.getElementById('userAuthorization')
+    const userAuthorization = document.getElementById("userAuthorization");
+
     if (groupInput) groupInput.style.display = "none";
     if (createBtn) createBtn.style.display = "none";
-    if (userAuthorization) userAuthorization.style.display = "none"
+    if (userAuthorization) userAuthorization.style.display = "none";
   }
 
   await loadGroups();
@@ -171,8 +172,8 @@ function renderTable() {
         isChecked ? "checked" : ""
       } onchange="toggleSelect('${u.id}', this)"></td>
       <td>${index + 1}</td>
-      <td>${u.name || "-"}</td>
       <td>${u.surname || "-"}</td>
+      <td>${u.name || "-"}</td>
       <td><a href="tel:${phone}">${phone}</a></td>
       <td>
         <button class="att-btn present-btn" onclick="markAttendance('${
@@ -183,12 +184,13 @@ function renderTable() {
         }','absent')">Absent</button>
       </td>
       <td>
-        <button class="delete-btn" onclick="deleteUser('${
-          u.id
-        }')">Delete</button>
-        <button class="att-btn" style="background:#17a2b8;" onclick="changeUserGroup('${
-          u.id
-        }')">Change Group</button>
+        ${
+          ADMIN_ROLE === "superadmin"
+            ? `<button class="delete-btn" onclick="deleteUser('${u.id}')">Delete</button>
+               <button class="att-btn" style="background:#ffc107;" onclick="viewAttendanceHistory('${u.id}')">View History</button>
+               <button class="att-btn change-group" style="background:#17a2b8;" onclick="changeUserGroup('${u.id}')">Change Group</button>`
+            : `<button class="att-btn" style="background:#ffc107;" onclick="viewAttendanceHistory('${u.id}')">View History</button>`
+        }
       </td>
     `;
 
@@ -199,6 +201,8 @@ function renderTable() {
 // -------------------- ATTENDANCE --------------------
 async function markAttendance(userId, status) {
   if (!currentGroupId) return alert("Select a group first");
+
+  // 🔹 Frontend uchun render
   attendance[userId] = status;
   renderTable();
 
@@ -206,14 +210,72 @@ async function markAttendance(userId, status) {
     const res = await fetch(API_ATTENDANCE, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, groupId: currentGroupId, status }),
+      body: JSON.stringify({ userId, status }),
     });
+
     const data = await res.json();
-    if (!res.ok) alert(data.error || "Failed to save attendance");
+
+    if (!res.ok) throw new Error(data.error || "Failed to save attendance");
+
+    // 🔹 Success alert qo‘shildi
+    alert(
+      `Attendance for ${users.find((u) => u.id === userId)?.name || "user"} saved as "${status.toUpperCase()}" ✅`,
+    );
   } catch (err) {
     console.error(err);
-    alert("Server error");
+    alert("Server error. Check backend logs!");
   }
+}
+
+// -------------------- ATTENDANCE HISTORY --------------------
+async function viewAttendanceHistory(userId) {
+  try {
+    const res = await fetch(API_ATTENDANCE);
+    if (!res.ok) throw new Error("Failed to load attendance history");
+
+    const attendanceData = await res.json();
+
+    const user = users.find((u) => u.id === userId);
+    if (!user || !user.telegramId) {
+      alert("Telegram ID not found");
+      return;
+    }
+
+    const userHistory = attendanceData
+      .filter((a) => String(a.telegramId) === String(user.telegramId))
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const tbody = document.querySelector("#historyTable tbody");
+    tbody.innerHTML = "";
+
+    if (!userHistory.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" style="text-align:center;">No attendance history</td>
+        </tr>`;
+    } else {
+      userHistory.forEach((h) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${h.name || "-"}</td>
+          <td>${h.surname || "-"}</td>
+          <td>${h.status}</td>
+          <td>${new Date(h.date).toLocaleDateString("en-GB")}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById("historyModal").style.display = "flex";
+  } catch (err) {
+    console.error(err);
+    alert("Failed to load attendance history");
+  }
+}
+
+// 🔹 Modalni yopish funksiyasi
+function closeHistoryModal() {
+  document.getElementById("historyModal").style.display = "none";
 }
 
 // -------------------- MESSAGE --------------------

@@ -166,7 +166,7 @@ function renderTable() {
 
   // 🔹 To‘laganlarni oxiriga chiqarish
   const sortedUsers = [...users].sort((a, b) =>
-    a.isPaid === b.isPaid ? 0 : a.isPaid ? 1 : -1
+    a.isPaid === b.isPaid ? 0 : a.isPaid ? 1 : -1,
   );
 
   sortedUsers.forEach((u, index) => {
@@ -194,13 +194,13 @@ function renderTable() {
     tr.innerHTML = `
       <td><input type="checkbox" ${isChecked ? "checked" : ""} onchange="toggleSelect('${u.id}', this)"></td>
       <td>${index + 1}</td>
-      <td>${u.name || "-"}</td>
       <td>${u.surname || "-"}</td>
+      <td>${u.name || "-"}</td>
       <td><a href="tel:${phone}">${phone}</a></td>
       <td>
-        <button class="att-btn present-btn" style="background:#28a745;" onclick="setPaid('${u.id}')">Paid</button>
+        <button class="att-btn present-btn" style="background:#28a745;" onclick="setPaid('${u.id}', '${u.name}', '${u.surname}')">Paid</button>
         <button class="att-btn absent-btn" style="background:#dc3545;" onclick="setUnpaid('${u.id}')">Unpaid</button>
-        <button class="delete-btn" style="background:#ffc107;" onclick="deletePayment('${u.id}')">Delete Payment</button>
+        <button class="delete-btn" style="background:#17a2b8;" onclick="viewPaymentHistory('${u.id}')">View History</button>
       </td>
       <td>${paymentStatus}</td>
     `;
@@ -210,11 +210,33 @@ function renderTable() {
 }
 
 // -------------------- BUTTON FUNCTIONS --------------------
-async function setPaid(userId) {
+async function setPaid(userId, name, surname) {
+  try {
+    const res = await fetch(`${BASE_URL}/payments/paid`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, name, surname }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to mark as paid");
+
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      user.isPaid = true;
+      user.paidAt = new Date(data.paidAt);
+    }
+    renderTable();
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+}
+
+async function setUnpaid(userId) {
   const user = users.find((u) => u.id === userId);
   if (!user) return;
 
-  const res = await fetch(`${BASE_URL}/payments/paid`, {
+  const res = await fetch(`${BASE_URL}/payments/unpaid`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId, name: user.name, surname: user.surname }),
@@ -222,22 +244,9 @@ async function setPaid(userId) {
 
   const data = await res.json();
 
-  // Backenddan startDate va endDate olindi
-  user.isPaid = true;
-  user.paidAt = new Date(data.paidAt);
-
-  renderTable();
-}
-
-async function setUnpaid(userId) {
-  const user = users.find((u) => u.id === userId);
-  if (!user) return;
-
-  await fetch(`${BASE_URL}/payments/unpaid`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, name: user.name, surname: user.surname }),
-  });
+  if (!data.success) {
+    return alert("Failed to mark as unpaid");
+  }
 
   user.isPaid = false;
   user.paidAt = null;
@@ -245,36 +254,63 @@ async function setUnpaid(userId) {
   renderTable();
 }
 
-async function deletePayment(userId) {
-  if (!confirm("Are you sure to delete payment?")) return;
+// 🔹 Modalni yopish
+function closeHistoryModal() {
+  document.getElementById("historyModal").style.display = "none";
+}
 
+// 🔹 View History tugmasi uchun funksiya
+async function viewPaymentHistory(userId) {
   try {
-    // 🔹 1️⃣ Backendga so‘rov yuborish
-    const res = await fetch(`${BASE_URL}/payments/${userId}`, {
-      method: "DELETE",
-    });
-    if (!res.ok) throw new Error("Failed to delete payment");
+    // 🔹 Backenddan barcha payments ni olish
+    const resPayments = await fetch(`${BASE_URL}/payments`);
+    if (!resPayments.ok) throw new Error("Failed to load payment history");
 
-    // 🔹 2️⃣ Frontendda userni default holatga qaytarish
-    users = users.map((u) => {
-      if (u.id === userId) {
-        return {
-          ...u,
-          isPaid: false,
-          paidAt: null,
-        };
-      }
-      return u;
-    });
+    const paymentsData = await resPayments.json();
+    const userPayments = paymentsData[userId]?.history || [];
 
-    renderTable();
+    const tbody = document.querySelector("#historyTable tbody");
+    tbody.innerHTML = "";
 
-    // 🔹 3️⃣ Payment status haqida xabar berish
-    alert("Payment deleted. User status reset to unpaid.");
+    if (userPayments.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No payment history</td></tr>`;
+    } else {
+      // 🔹 Sana bo‘yicha sort
+      const sorted = userPayments
+        .map((p) => ({
+          name: p.name,
+          surname: p.surname,
+          date: p.paidAt ? new Date(p.paidAt) : null,
+        }))
+        .sort((a, b) => a.date - b.date);
+
+      sorted.forEach((item) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${item.surname}</td>
+          <td>${item.name}</td>
+          <td>${formatDate(item.date)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById("historyModal").style.display = "flex";
   } catch (err) {
     console.error(err);
-    alert(err.message || "Failed to delete payment");
+    alert("Failed to load payment history");
   }
+}
+
+// 🔹 DD/MM/YYYY formatlash funksiyasi (agar frontendda yo‘q bo‘lsa)
+function formatDate(date) {
+  if (!date) return "-";
+  const d = new Date(date);
+  if (isNaN(d)) return "-";
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
 }
 
 // -------------------- MESSAGE --------------------
