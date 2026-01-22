@@ -154,7 +154,6 @@ async function loadUsers() {
   }
 }
 
-// 🔹 DD/MM/YYYY formatlash funksiyasi
 // -------------------- RENDER TABLE --------------------
 function renderTable() {
   tableBody.innerHTML = "";
@@ -306,7 +305,6 @@ function closeHistoryModal() {
 // 🔹 View History tugmasi uchun funksiya
 async function viewPaymentHistory(userId) {
   try {
-    // 🔹 Backenddan barcha payments ni olish
     const resPayments = await fetch(`${BASE_URL}/payments`);
     if (!resPayments.ok) throw new Error("Failed to load payment history");
 
@@ -319,20 +317,21 @@ async function viewPaymentHistory(userId) {
     if (userPayments.length === 0) {
       tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No payment history</td></tr>`;
     } else {
-      // 🔹 Sana bo‘yicha sort
       const sorted = userPayments
         .map((p) => ({
           name: p.name,
           surname: p.surname,
-          date: p.paidAt ? new Date(p.paidAt) : null,
+          date: p.date ? new Date(p.date) : null, // <-- shu o‘zgardi
+          status: p.status,
         }))
         .sort((a, b) => a.date - b.date);
 
       sorted.forEach((item) => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${item.surname}</td>
-          <td>${item.name}</td>
+          <td>${item.surname || "-"}</td>
+          <td>${item.name || "-"}</td>
+          <td>${item.status || "-"}</td>
           <td>${formatDate(item.date)}</td>
         `;
         tbody.appendChild(tr);
