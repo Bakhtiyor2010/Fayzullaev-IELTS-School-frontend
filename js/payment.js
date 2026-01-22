@@ -208,9 +208,9 @@ function renderTable() {
       <td>${u.name || "-"}</td>
       <td><a href="tel:${phone}">${phone}</a></td>
       <td>
-        <button class="att-btn present-btn" style="background:#28a745;" onclick="setPaid('${u.id}', '${u.name}', '${u.surname}')">Paid</button>
-        <button class="att-btn absent-btn" style="background:#dc3545;" onclick="setUnpaid('${u.id}')">Unpaid</button>
-        <button class="delete-btn" style="background:#17a2b8;" onclick="viewPaymentHistory('${u.id}')">View History</button>
+        <button class="att-btn present-btn" style="background:#28a745;" onclick="setPaid("${u.id}", "${u.name}", "${u.surname}")">Paid</button>
+        <button class="att-btn absent-btn" style="background:#dc3545;" onclick="setUnpaid("${u.id}")">Unpaid</button>
+        <button class="delete-btn" style="background:#17a2b8;" onclick="viewPaymentHistory("${u.id}")">View History</button>
       </td>
       <td>${paymentStatus}</td>
     `;
