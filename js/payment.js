@@ -1,5 +1,5 @@
 // 🔹 API ENDPOINTS
-const BASE_URL = "https://successful-grace-production-5eea.up.railway.app/api";
+const BASE_URL = "https://second-telegram-bot-backend.onrender.com/api";
 
 const API_USERS = `${BASE_URL}/users`;
 const API_GROUPS = `${BASE_URL}/groups`;
@@ -171,7 +171,7 @@ function renderTable() {
 
   // 🔹 To‘laganlarni oxiriga chiqarish
   const sortedUsers = [...users].sort((a, b) =>
-    a.isPaid === b.isPaid ? 0 : a.isPaid ? 1 : -1
+    a.isPaid === b.isPaid ? 0 : a.isPaid ? 1 : -1,
   );
 
   sortedUsers.forEach((u, index) => {

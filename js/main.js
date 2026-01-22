@@ -1,5 +1,5 @@
 // 🔹 API ENDPOINTS
-const BASE_URL = "https://successful-grace-production-5eea.up.railway.app/api";
+const BASE_URL = "https://second-telegram-bot-backend.onrender.com/api";
 
 const API_USERS = `${BASE_URL}/users`;
 const API_GROUPS = `${BASE_URL}/groups`;

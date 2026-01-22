@@ -1,5 +1,5 @@
 // ================= API =================
-const BASE_URL = "https://successful-grace-production-5eea.up.railway.app/api";
+const BASE_URL = "https://second-telegram-bot-backend.onrender.com/api";
 
 const API_PENDING_USERS = `${BASE_URL}/users/pending`;
 const API_APPROVE = `${BASE_URL}/admin/approve-user`;
