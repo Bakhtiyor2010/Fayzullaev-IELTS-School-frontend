@@ -202,7 +202,7 @@ function renderTable() {
     }
 
     tr.innerHTML = `
-      <td><input type="checkbox" ${isChecked ? "checked" : ""} onchange="toggleSelect('${u.id}', this)"></td>
+      <td><input type="checkbox" ${isChecked ? "checked" : ""} onchange="toggleSelect("${u.id}", this)"></td>
       <td>${index + 1}</td>
       <td>${u.surname || "-"}</td>
       <td>${u.name || "-"}</td>
