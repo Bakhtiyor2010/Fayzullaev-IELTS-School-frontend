@@ -77,23 +77,6 @@ th {
     top: 0;
 }
 
-.att-btn {
-    border: none;
-    padding: 6px 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    color: white;
-    margin-right: 5px;
-}
-
-.present-btn {
-    background: #28a745;
-}
-
-.absent-btn {
-    background: #dc3545;
-}
-
 @media (max-width: 1100px) {
     .container {
         flex-direction: column;

@@ -9,15 +9,21 @@
   <script src="./js/payment.js" defer="true"></script>
 </head>
 <body>
-  <nav>
-    <a>Payment</a>
-    <a href="admin.html" style="border: 1px solid white; padding: 8px 16px; border-radius: 4px;" id="paymentSection">Attendance</a>
-    <a href="users.html" style="border: 1px solid white; padding: 8px 16px; border-radius: 4px;">User Authentication</a>
-    <a href="index.html" style="border: 1px solid white; padding: 8px 16px; border-radius: 4px;">Log out</a>
+  <nav class="navbar">
+    <div class="hamburger" id="hamburger">&#9776;</div>
+
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#">Payment</a></li>
+      <li class="right-links">
+        <a href="attendance.html">Attendance</a>
+        <a href="absentUsers.html">Absent Students</a>
+        <a href="users.html">User Authentication</a>
+        <a href="index.html">Log out</a>
+      </li>
+    </ul>
   </nav>
 
   <div class="container">
-    <!-- GROUPS -->
     <aside class="groups">
       <h2>Groups</h2>
       <hr>
@@ -25,7 +31,6 @@
       <div id="groupList"></div>
     </aside>
 
-    <!-- CONTENT -->
     <aside class="content">
       <h2 id="groupTitle">Select a group</h2>
 
@@ -56,23 +61,23 @@
     </aside>
   </div>
 
-  <!-- Payment History Modal -->
-<div id="historyModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+  <div id="historyModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
   background: rgba(0,0,0,0.5); justify-content:center; align-items:center;">
-  <div style="background:#fff; padding:20px; border-radius:8px; width:400px; max-height:80%; overflow-y:auto;">
-    <h3>Payment History</h3>
-    <table id="historyTable" style="width:100%; border-collapse:collapse;">
-      <thead>
-        <tr>
-          <th>Surname</th>
-          <th>Name</th>
-          <th>Date</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <button onclick="closeHistoryModal()" class="att-btn absent-btn" style="background:#dc3545; margin-top: 10px; margin-left: auto;">Close</button>
+    <div style="background:#fff; padding:20px; border-radius:8px; width:400px; max-height:80%; overflow-y:auto;">
+      <h3>Payment History</h3>
+      <table id="historyTable" style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th>Surname</th>
+            <th>Name</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button onclick="closeHistoryModal()" class="att-btn absent-btn"
+        style="background:#dc3545; margin-top: 10px; margin-left: auto;">Close</button>
+    </div>
   </div>
-</div>
 </body>
 </html>

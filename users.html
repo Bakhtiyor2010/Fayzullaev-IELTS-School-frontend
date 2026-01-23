@@ -1,39 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="shortcut icon" href="./images/logo.jpg" type="image/x-icon">
-    <title>User Authentication</title>
-    <link rel="stylesheet" href="./css/users.css">
-    <script src="./js/users.js" defer="true"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="./images/logo.jpg" type="image/x-icon">
+  <title>User Authentication</title>
+  <link rel="stylesheet" href="./css/users.css">
+  <script src="./js/users.js" defer="true"></script>
 </head>
 <body>
-    <nav>
-    <a>User Authentication</a>
-    <a href="payment.html" style="border: 1px solid white; padding: 8px 16px; border-radius: 4px;" id="paymentSection">Payment</a>
-    <a href="admin.html" style="border: 1px solid white; padding: 8px 16px; border-radius: 4px;">Attendance</a>
-    <a href="index.html" style="border: 1px solid white; padding: 8px 16px; border-radius: 4px;">Log out</a>
+  <nav class="navbar">
+    <div class="hamburger" id="hamburger">&#9776;</div>
+
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#">User Authentication</a></li>
+      <li class="right-links">
+        <a href="attendance.html">Attendance</a>
+        <a href="payment.html">Payment</a>
+        <a href="absentUsers.html">Absent Students</a>
+        <a href="index.html">Log out</a>
+      </li>
+    </ul>
   </nav>
 
   <div class="container">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Surname</th>
-            <th>Name</th>
-            <th>Phone</th>
-            <th>Group Name</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody">
-          <tr>
-            <td colspan="6">Pending users will appear here</td>
-          </tr>
-        </tbody>
-      </table>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Surname</th>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Group Name</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr>
+          <td colspan="6">Pending users will appear here</td>
+        </tr>
+      </tbody>
+    </table>
     </aside>
   </div>
 </body>

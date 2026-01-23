@@ -1,4 +1,3 @@
-// 🔹 API ENDPOINTS
 const BASE_URL = "https://second-telegram-bot-backend.onrender.com/api";
 
 const API_USERS = `${BASE_URL}/users`;
@@ -13,8 +12,13 @@ let ADMIN_ROLE = null;
 
 const tableBody = document.getElementById("tableBody");
 const groupList = document.getElementById("groupList");
+const hamburger = document.getElementById("hamburger");
+const navLinks = document.getElementById("navLinks");
 
-// -------------------- GROUPS --------------------
+hamburger.addEventListener("click", () => {
+  navLinks.classList.toggle("show");
+});
+
 async function loadGroups() {
   const loader = document.getElementById("groupLoader");
   loader.style.display = "block";
@@ -25,18 +29,14 @@ async function loadGroups() {
     if (!res.ok) throw new Error("Failed to load groups");
     const data = await res.json();
 
-    // Firestore uchun: doc.id dan foydalanish
     groups = data.map((g) => ({ ...g, id: g.id || g._id }));
 
-    // ------------------- ALPHABETIC SORT -------------------
     groups.sort((a, b) => {
       if (a.name.toLowerCase() < b.name.toLowerCase()) return -1;
       if (a.name.toLowerCase() > b.name.toLowerCase()) return 1;
       return 0;
     });
-    // --------------------------------------------------------
 
-    // Agar guruhlar bo'sh bo'lsa
     if (groups.length === 0) {
       groupList.innerHTML = `<div style="text-align:center;color:gray;">No groups</div>`;
       document.getElementById("groupTitle").textContent = "No groups";
@@ -82,56 +82,29 @@ function renderGroups() {
     };
 
     div.appendChild(nameBtn);
-
-    if (ADMIN_ROLE === "superadmin") {
-      const editBtn = document.createElement("button");
-      editBtn.textContent = "Edit";
-      editBtn.style.background = "#ffc107";
-      editBtn.style.padding = "10px 20px";
-      editBtn.style.marginLeft = "5px";
-      editBtn.style.width = "fit-content";
-      editBtn.onclick = () => editGroupPrompt(g.id);
-
-      const delBtn = document.createElement("button");
-      delBtn.textContent = "Delete";
-      delBtn.style.background = "#dc3545";
-      delBtn.style.padding = "10px 20px";
-      delBtn.style.marginLeft = "5px";
-      delBtn.style.width = "fit-content";
-      delBtn.onclick = () => deleteGroup(g.id);
-
-      div.appendChild(editBtn);
-      div.appendChild(delBtn);
-    }
-
     groupList.appendChild(div);
   });
 }
 
-// -------------------- USERS --------------------
 async function loadUsers() {
   if (!currentGroupId) return;
 
   tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;font-size:20px;">Loading...</td></tr>`;
 
   try {
-    // 1️⃣ Users
     const resUsers = await fetch(API_USERS);
     if (!resUsers.ok) throw new Error("Failed to load users");
     const usersData = await resUsers.json();
 
-    // 2️⃣ Payments
     const resPayments = await fetch(`${BASE_URL}/payments`);
     if (!resPayments.ok) throw new Error("Failed to load payments");
     const paymentsData = await resPayments.json();
 
-    // 🔹 Paymentsdagi timestamp-larni JS Date ga aylantirish
     for (const key in paymentsData) {
       if (paymentsData[key].paidAt)
         paymentsData[key].paidAt = new Date(paymentsData[key].paidAt);
     }
 
-    // 3️⃣ Map users
     users = usersData
       .map((u) => {
         const payment = paymentsData[u.id] || {};
@@ -144,7 +117,6 @@ async function loadUsers() {
       })
       .filter((u) => u.groupId && u.groupId === currentGroupId);
 
-    // 4️⃣ Oxirida to‘laganlarni oxiriga chiqarish
     users.sort((a, b) => (a.isPaid === b.isPaid ? 0 : a.isPaid ? 1 : -1));
 
     renderTable();
@@ -154,7 +126,6 @@ async function loadUsers() {
   }
 }
 
-// -------------------- RENDER TABLE --------------------
 function renderTable() {
   tableBody.innerHTML = "";
 
@@ -168,7 +139,6 @@ function renderTable() {
     return;
   }
 
-  // 🔹 To‘laganlarni oxiriga chiqarish
   const sortedUsers = [...users].sort((a, b) =>
     a.isPaid === b.isPaid ? 0 : a.isPaid ? 1 : -1,
   );
@@ -185,13 +155,12 @@ function renderTable() {
         : "+998" + u.phone
       : "N/A";
 
-    // 🔹 Payment status
     let paymentStatus = "Unpaid";
-    tr.style.background = "#f8d7da"; // qizil
+    tr.style.background = "#f8d7da";
 
     if (u.isPaid && u.paidAt) {
       paymentStatus = formatDate(u.paidAt);
-      tr.style.background = "#d4edda"; // yashil
+      tr.style.background = "#d4edda";
     }
 
     tr.innerHTML = `
@@ -224,7 +193,7 @@ function renderTable() {
         </button>
 
         <button
-          class="delete-btn"
+        class="att-btn"
           style="background:#17a2b8;"
           onclick="viewPaymentHistory('${u.id}')"
         >
@@ -238,7 +207,6 @@ function renderTable() {
   });
 }
 
-// -------------------- EVENT DELEGATION --------------------
 tableBody.addEventListener("click", (e) => {
   if (!e.target.classList.contains("paid-btn")) return;
 
@@ -250,7 +218,6 @@ tableBody.addEventListener("click", (e) => {
   setPaid(user.id, user.name, user.surname);
 });
 
-// -------------------- BUTTON FUNCTIONS --------------------
 async function setPaid(userId, name, surname) {
   try {
     const res = await fetch(`${BASE_URL}/payments/paid`, {
@@ -297,12 +264,10 @@ async function setUnpaid(userId) {
   renderTable();
 }
 
-// 🔹 Modalni yopish
 function closeHistoryModal() {
   document.getElementById("historyModal").style.display = "none";
 }
 
-// 🔹 View History tugmasi uchun funksiya
 async function viewPaymentHistory(userId) {
   try {
     const resPayments = await fetch(`${BASE_URL}/payments`);
@@ -314,23 +279,22 @@ async function viewPaymentHistory(userId) {
     const tbody = document.querySelector("#historyTable tbody");
     tbody.innerHTML = "";
 
-    // 🔹 Faqat paid recordlarini ajratib olamiz
     const paidRecords = userPayments
-      .filter(p => p.status === "paid") // faqat paid
-      .map(p => ({
+      .filter((p) => p.status === "paid")
+      .map((p) => ({
         name: p.name || "-",
         surname: p.surname || "-",
-        date: p.date && p.date.seconds
-          ? new Date(p.date.seconds * 1000)
-          : p.date || null,
+        date:
+          p.date && p.date.seconds
+            ? new Date(p.date.seconds * 1000)
+            : p.date || null,
       }))
       .sort((a, b) => a.date - b.date);
 
-    // 🔹 Agar paid record bo'lmasa ham modalni ko'rsatish
     if (paidRecords.length === 0) {
       tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">No payment history</td></tr>`;
     } else {
-      paidRecords.forEach(item => {
+      paidRecords.forEach((item) => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${item.surname}</td>
@@ -348,7 +312,6 @@ async function viewPaymentHistory(userId) {
   }
 }
 
-// 🔹 DD/MM/YYYY formatlash funksiyasi (agar frontendda yo‘q bo‘lsa)
 function formatDate(date) {
   if (!date) return "-";
   const d = new Date(date);
@@ -359,7 +322,6 @@ function formatDate(date) {
   return `${day}/${month}/${year}`;
 }
 
-// -------------------- MESSAGE --------------------
 async function sendMessage() {
   const text = document.getElementById("messageText").value.trim();
   if (!text) return alert("Message empty");
@@ -421,53 +383,6 @@ async function sendToAll() {
   }
 }
 
-// -------------------- GROUP ACTIONS --------------------
-async function deleteGroup(groupId) {
-  if (!confirm("Delete this group?")) return;
-  try {
-    const res = await fetch(`${API_GROUPS}/${groupId}`, { method: "DELETE" });
-    if (!res.ok) throw new Error("Failed to delete group");
-
-    if (currentGroupId === groupId) {
-      currentGroupId = null;
-      document.getElementById("groupTitle").textContent = "Select a group";
-      tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center">Select a group to load users</td></tr>`;
-    }
-
-    groups = groups.filter((g) => g.id !== groupId);
-    renderGroups();
-  } catch (err) {
-    console.error(err);
-    alert("Error deleting group");
-  }
-}
-
-async function editGroupPrompt(groupId) {
-  const group = groups.find((g) => g.id === groupId);
-  if (!group) return;
-
-  const newName = prompt("Enter new group name", group.name);
-  if (!newName) return;
-
-  try {
-    const res = await fetch(`${API_GROUPS}/${groupId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newName }),
-    });
-    if (!res.ok) throw new Error("Failed to edit group");
-
-    await loadGroups();
-    if (currentGroupId === groupId) {
-      document.getElementById("groupTitle").textContent = newName;
-    }
-  } catch (err) {
-    console.error(err);
-    alert("Failed to edit group");
-  }
-}
-
-// -------------------- SELECT --------------------
 function toggleSelect(id, checkbox) {
   if (checkbox.checked) selectedUsers.add(id);
   else selectedUsers.delete(id);
@@ -481,5 +396,5 @@ function toggleSelectAll(checkbox) {
 }
 
 window.onload = () => {
-  loadGroups(); // grouplarni yuklash
+  loadGroups();
 };

@@ -1,22 +1,24 @@
-// ================= API =================
 const BASE_URL = "https://second-telegram-bot-backend.onrender.com/api";
 
 const API_PENDING_USERS = `${BASE_URL}/users/pending`;
 const API_APPROVE = `${BASE_URL}/admin/approve-user`;
 const API_REJECT = `${BASE_URL}/admin/reject-user`;
 
-// ================= STATE =================
 let users = [];
 let selectedUsers = new Set();
 let ADMIN_ROLE = null;
 
 const tableBody = document.getElementById("tableBody");
+const hamburger = document.getElementById("hamburger");
+const navLinks = document.getElementById("navLinks");
 
-// ================= DOM READY =================
+hamburger.addEventListener("click", () => {
+  navLinks.classList.toggle("show");
+});
+
 document.addEventListener("DOMContentLoaded", async () => {
   ADMIN_ROLE = localStorage.getItem("ADMIN_ROLE");
 
-  // Moderator/Admin payment ko‘rmasin
   if (ADMIN_ROLE === "moderator" || ADMIN_ROLE === "admin") {
     const paymentSection = document.getElementById("paymentSection");
     if (paymentSection) paymentSection.style.display = "none";
@@ -25,7 +27,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadPendingUsers();
 });
 
-// ================= LOAD PENDING USERS =================
 async function loadPendingUsers() {
   tableBody.innerHTML = `
     <tr>
@@ -61,7 +62,6 @@ async function loadPendingUsers() {
   }
 }
 
-// ================= RENDER TABLE =================
 function renderTable() {
   tableBody.innerHTML = "";
 
@@ -84,12 +84,12 @@ function renderTable() {
       <td>${u.groupName}</td>
       <td>
         <button
-           class="att-btn present-btn" style="background:#28a745;" 
+           class="att-btn present-btn"
           onclick="approveUser('${u.id}')">
           Allow
         </button>
         <button
-           class="att-btn absent-btn" style="background:#dc3545;" 
+           class="att-btn absent-btn"
           onclick="rejectUser('${u.id}')">
           Not Allow
         </button>
@@ -99,7 +99,6 @@ function renderTable() {
   });
 }
 
-// ================= ACTIONS =================
 async function approveUser(telegramId) {
   if (!confirm("Approve this user?")) return;
 
@@ -108,10 +107,8 @@ async function approveUser(telegramId) {
     if (!res.ok) throw new Error(`Server returned ${res.status}`);
     const data = await res.json();
 
-    // 🔹 Alertdan keyin table yangilash
     alert(`User approved successfully! Group: ${data.groupName}`);
 
-    // ✅ Table dan o'sha userni o'chirish
     users = users.filter((u) => u.id !== telegramId);
     selectedUsers.delete(telegramId);
     renderTable();
@@ -128,10 +125,8 @@ async function rejectUser(telegramId) {
     const res = await fetch(`${API_REJECT}/${telegramId}`, { method: "DELETE" });
     if (!res.ok) throw new Error("Failed to reject user");
 
-    // 🔹 Alertdan keyin table yangilash
     alert("User rejected successfully");
 
-    // ✅ Table dan o'sha userni o'chirish
     users = users.filter((u) => u.id !== telegramId);
     selectedUsers.delete(telegramId);
     renderTable();

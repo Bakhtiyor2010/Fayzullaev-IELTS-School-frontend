@@ -23,6 +23,30 @@ body {
     text-align: center;
 }
 
+.password-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-container input {
+  flex: 1;
+  padding-right: 40px;
+}
+
+.password-container i {
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
+  color: #555;
+  font-size: 18px;
+  transition: 0.3s;
+}
+
+.password-container i:hover {
+  color: #000;
+}
+
 .login-container h2 {
     margin-bottom: 30px;
     font-size: 28px;

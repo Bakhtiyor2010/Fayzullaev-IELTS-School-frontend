@@ -1,5 +1,15 @@
 const form = document.getElementById("loginForm");
 const button = document.getElementById("loginBtn");
+const passwordInput = document.getElementById("password");
+const togglePassword = document.getElementById("togglePassword");
+
+togglePassword.addEventListener("click", () => {
+  const type = passwordInput.type === "password" ? "text" : "password";
+  passwordInput.type = type;
+
+  togglePassword.classList.toggle("fa-eye");
+  togglePassword.classList.toggle("fa-eye-slash");
+});
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -16,28 +26,23 @@ form.addEventListener("submit", async (e) => {
 
   try {
     const res = await fetch(
-  "https://second-telegram-bot-backend.onrender.com/api/admin/login",
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
-  }
-);
+      "https://second-telegram-bot-backend.onrender.com/api/admin/login",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      },
+    );
 
-const data = await res.json();
-console.log("Login response:", data);
+    const data = await res.json();
+    console.log("Login response:", data);
 
-if (res.ok) {
-  // backenddan kelgan role-ni saqlaymiz
-  localStorage.setItem("ADMIN_ROLE", data.role); // masalan: "superadmin", "admin", "moderator"
-  
-  // keyin admin sahifaga o‘tish
-  window.location.href = "admin.html";
-} else {
-  alert(data.error || "Login failed");
-}
-
-
+    if (res.ok) {
+      localStorage.setItem("ADMIN_ROLE", data.role);
+      window.location.href = "attendance.html";
+    } else {
+      alert(data.error || "Login failed");
+    }
   } catch (err) {
     console.error(err);
     alert("Server bilan ulanishda xatolik");

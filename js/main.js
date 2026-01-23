@@ -1,4 +1,3 @@
-// 🔹 API ENDPOINTS
 const BASE_URL = "https://second-telegram-bot-backend.onrender.com/api";
 
 const API_USERS = `${BASE_URL}/users`;
@@ -11,18 +10,28 @@ let selectedUsers = new Set();
 let groups = [];
 let currentGroupId = null;
 let ADMIN_ROLE = null;
+let currentAdminUsername = localStorage.getItem("ADMIN_USERNAME") || "";
 
 const tableBody = document.getElementById("tableBody");
 const groupList = document.getElementById("groupList");
+const hamburger = document.getElementById("hamburger");
+const navLinks = document.getElementById("navLinks");
 
-// DOM ready
+hamburger.addEventListener("click", () => {
+  navLinks.classList.toggle("show");
+});
+
 document.addEventListener("DOMContentLoaded", async () => {
   ADMIN_ROLE = localStorage.getItem("ADMIN_ROLE");
 
-  // Moderator/Admin uchun Payment va Create Group yashirish
   if (ADMIN_ROLE === "moderator" || ADMIN_ROLE === "admin") {
     const paymentSection = document.getElementById("paymentSection");
+    const absentStudents = document.getElementById("absentStudents");
+    const userAuthentication = document.getElementById("userAuthentication");
+
     if (paymentSection) paymentSection.style.display = "none";
+    if (absentStudents) absentStudents.style.display = "none";
+    if (userAuthentication) userAuthentication.style.display = "none";
 
     const groupInput = document.getElementById("groupInput");
     const createBtn = document.querySelector('button[onclick="createGroup()"]');
@@ -36,7 +45,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadGroups();
 });
 
-// -------------------- GROUPS --------------------
 async function loadGroups() {
   const loader = document.getElementById("groupLoader");
   loader.style.display = "block";
@@ -47,18 +55,14 @@ async function loadGroups() {
     if (!res.ok) throw new Error("Failed to load groups");
     const data = await res.json();
 
-    // Firestore uchun: doc.id dan foydalanish
     groups = data.map((g) => ({ ...g, id: g.id || g._id }));
 
-    // ------------------- ALPHABETIC SORT -------------------
     groups.sort((a, b) => {
       if (a.name.toLowerCase() < b.name.toLowerCase()) return -1;
       if (a.name.toLowerCase() > b.name.toLowerCase()) return 1;
       return 0;
     });
-    // --------------------------------------------------------
 
-    // Agar guruhlar bo'sh bo'lsa
     if (groups.length === 0) {
       groupList.innerHTML = `<div style="text-align:center;color:gray;">No groups</div>`;
       document.getElementById("groupTitle").textContent = "No groups";
@@ -130,7 +134,6 @@ function renderGroups() {
   });
 }
 
-// -------------------- USERS --------------------
 async function loadUsers() {
   if (!currentGroupId) return;
 
@@ -141,7 +144,6 @@ async function loadUsers() {
     if (!res.ok) throw new Error("Failed to load users");
     const data = await res.json();
 
-    // Firestore: doc.id dan foydalanish, groupId bilan filter
     users = data
       .map((u) => ({ ...u, id: u.id || u._id }))
       .filter((u) => u.groupId && u.groupId === currentGroupId);
@@ -206,11 +208,9 @@ function renderTable() {
   });
 }
 
-// -------------------- ATTENDANCE --------------------
 async function markAttendance(userId, status) {
   if (!currentGroupId) return alert("Select a group first");
 
-  // 🔹 Frontend uchun render
   attendance[userId] = status;
   renderTable();
 
@@ -218,14 +218,16 @@ async function markAttendance(userId, status) {
     const res = await fetch(API_ATTENDANCE, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, status }),
+      body: JSON.stringify({
+        userId,
+        status,
+        adminUsername: currentAdminUsername,
+      }),
     });
 
     const data = await res.json();
-
     if (!res.ok) throw new Error(data.error || "Failed to save attendance");
 
-    // 🔹 Success alert qo‘shildi
     alert(
       `Attendance for ${users.find((u) => u.id === userId)?.name || "user"} saved as "${status.toUpperCase()}" ✅`,
     );
@@ -235,7 +237,6 @@ async function markAttendance(userId, status) {
   }
 }
 
-// -------------------- ATTENDANCE HISTORY --------------------
 async function viewAttendanceHistory(userId) {
   try {
     const res = await fetch(API_ATTENDANCE);
@@ -281,12 +282,10 @@ async function viewAttendanceHistory(userId) {
   }
 }
 
-// 🔹 Modalni yopish funksiyasi
 function closeHistoryModal() {
   document.getElementById("historyModal").style.display = "none";
 }
 
-// -------------------- MESSAGE --------------------
 async function sendMessage() {
   const text = document.getElementById("messageText").value.trim();
   if (!text) return alert("Message empty");
@@ -348,8 +347,6 @@ async function sendToAll() {
   }
 }
 
-// -------------------- USER ACTIONS --------------------
-// deleteUser funksiyasi
 async function deleteUser(userId) {
   if (!confirm("Delete this user?")) return;
 
@@ -357,21 +354,18 @@ async function deleteUser(userId) {
   if (!user) return alert("User not found");
 
   try {
-    // 🔹 1️⃣ DELETE user
     const res = await fetch(`${API_USERS}/${userId}`, { method: "DELETE" });
     if (!res.ok) {
       const data = await res.json();
       throw new Error(data.error || "Failed to delete user");
     }
 
-    // 🔹 2️⃣ Frontend array update va table render
     users = users.filter((u) => u.id !== userId);
     selectedUsers.delete(userId);
     renderTable();
 
     alert("User deleted ✅");
 
-    // 🔹 3️⃣ Xabar yuborish Telegramga (xato alert bermaydi)
     try {
       await fetch(API_ATTENDANCE, {
         method: "POST",
@@ -392,7 +386,6 @@ async function deleteUser(userId) {
   }
 }
 
-// -------------------- GROUP ACTIONS --------------------
 async function deleteGroup(groupId) {
   if (!confirm("Delete this group?")) return;
   try {
@@ -473,7 +466,6 @@ async function changeUserGroup(userId) {
   }
 }
 
-// -------------------- SELECT --------------------
 function toggleSelect(id, checkbox) {
   if (checkbox.checked) selectedUsers.add(id);
   else selectedUsers.delete(id);
@@ -486,7 +478,6 @@ function toggleSelectAll(checkbox) {
   renderTable();
 }
 
-// -------------------- CREATE GROUP --------------------
 function createGroup() {
   const input = document.getElementById("groupInput");
   const name = input.value.trim();
