@@ -322,6 +322,7 @@ async function viewAttendanceHistory(userId) {
 
     const userHistory = attendanceData
       .filter((a) => String(a.telegramId) === String(user.telegramId))
+      .filter((p) => p.status != "paid" && p.status != "unpaid")
       .sort((a, b) => new Date(a.date) - new Date(b.date));
 
     const tbody = document.querySelector("#historyTable tbody");
