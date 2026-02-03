@@ -1,4 +1,4 @@
-const BASE_URL = "https://fayzullaev-ielts-school-backend.onrender.com/api";
+const BASE_URL = "http://localhost:5000/api";
 
 const API_USERS = `${BASE_URL}/users`;
 const API_GROUPS = `${BASE_URL}/groups`;
@@ -7,6 +7,7 @@ const API_ATTENDANCE = `${BASE_URL}/attendance`;
 let users = [];
 let selectedUsers = new Set();
 let groups = [];
+let paymentsByUserMonth = {};
 let currentGroupId = null;
 let ADMIN_ROLE = null;
 
@@ -41,7 +42,7 @@ async function loadGroups() {
       groupList.innerHTML = `<div style="text-align:center;color:gray;">No groups</div>`;
       document.getElementById("groupTitle").textContent = "No groups";
       currentGroupId = null;
-      tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No users to show</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">No users to show</td></tr>`;
       return;
     }
 
@@ -89,7 +90,7 @@ function renderGroups() {
 async function loadUsers() {
   if (!currentGroupId) return;
 
-  tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;font-size:20px;">Loading...</td></tr>`;
+  tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;font-size:20px;">Loading...</td></tr>`;
 
   let paymentsData = {}; // <- default empty in case payments fail
 
@@ -143,109 +144,232 @@ users = usersData
     renderTable();
   } catch (err) {
     console.error(err);
-    tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:red">Failed to load users</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:red">Failed to load users</td></tr>`;
   }
 }
 
+// =====================================================
+const monthNames = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+
+function generateMonthSelect(select) {
+  select.innerHTML = ""; // clear previous
+
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.textContent = "Select month";
+  defaultOption.selected = true;
+  defaultOption.disabled = true;
+  select.appendChild(defaultOption);
+
+  monthNames.forEach((m) => {
+    const option = document.createElement("option");
+    option.value = m;
+    option.textContent = m;
+    select.appendChild(option);
+  });
+}
+
+function generateYearSelect(select) {
+  select.innerHTML = ""; // clear previous
+
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.textContent = "Select year";
+  defaultOption.selected = true;
+  defaultOption.disabled = true;
+  select.appendChild(defaultOption);
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  for (let y = currentYear - 3; y <= currentYear + 2; y++) {
+    const option = document.createElement("option");
+    option.value = y;
+    option.textContent = y;
+    select.appendChild(option);
+  }
+}
+// =====================================================
+
 function renderTable() {
   tableBody.innerHTML = "";
-
   if (!users.length) {
-    tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center">No users in this group</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="10" style="text-align:center">No users in this group</td></tr>`;
     return;
   }
 
   users.forEach((u, index) => {
     const tr = document.createElement("tr");
 
-    tr.style.background = u.isPaid ? "#d4edda" : "#f8d7da";
-
-    if (selectedUsers.has(u.id)) tr.classList.add("selected");
-
-    const phone = u.phone ? (u.phone.startsWith("+998") ? u.phone : "+998" + u.phone) : "N/A";
-    const paymentStatus = u.isPaid ? (u.paidAt ? formatDate(u.paidAt) : "Paid") : "Unpaid";
+    const phone = u.phone
+      ? u.phone.startsWith("+998") ? u.phone : "+998" + u.phone
+      : "N/A";
 
     tr.innerHTML = `
-      <td>
-        <input type="checkbox" ${selectedUsers.has(u.id) ? "checked" : ""} onchange="toggleSelect('${u.id}', this)">
-      </td>
+      <td><input type="checkbox" onchange="toggleSelect('${u.id}', this)"></td>
       <td>${index + 1}</td>
       <td>${u.surname || "-"}</td>
       <td>${u.name || "-"}</td>
       <td><a href="tel:${phone}">${phone}</a></td>
+      <td><select class="rowMonth"></select></td>
+      <td><select class="rowYear"></select></td>
       <td>
-        <button class="paid-btn" style="background: #28a745;" data-id="${u.id}">
+        <button class="paid-btn" style="background:#28a745;" data-id="${u.id}">
           <i class="fa-solid fa-circle-check"></i>
         </button>
-        <button style="background: #dc3545;" onclick="setUnpaid('${u.id}')">
+        <button class="unpaid-btn" style="background:#dc3545;" data-id="${u.id}">
           <i class="fa-solid fa-circle-xmark"></i>
         </button>
-        <button style="background: #ffc107;" onclick="viewPaymentHistory('${u.id}')">
+        <button style="background:#ffc107;" onclick="viewPaymentHistory('${u.id}')">
           <i class="fa-solid fa-clock-rotate-left"></i>
         </button>
       </td>
-      <td>${paymentStatus}</td>
+      <td class="status-cell">—</td>
     `;
 
     tableBody.appendChild(tr);
+
+    const monthSelect = tr.querySelector(".rowMonth");
+    const yearSelect = tr.querySelector(".rowYear");
+
+    generateMonthSelect(monthSelect);
+    generateYearSelect(yearSelect);
+
+    const statusCell = tr.querySelector(".status-cell");
+
+    // ================================
+    // Find latest payment for this user
+    let latestPaidMonthKey = null;
+    let latestPaidDate = null;
+
+    if (paymentsByUserMonth[u.id]) {
+      for (const key in paymentsByUserMonth[u.id]) {
+        if (!key.endsWith("_date") && paymentsByUserMonth[u.id][key] === "paid") {
+          const date = paymentsByUserMonth[u.id][key + "_date"];
+          if (!latestPaidDate || new Date(date) > new Date(latestPaidDate)) {
+            latestPaidMonthKey = key;
+            latestPaidDate = date;
+          }
+        }
+      }
+    }
+
+    // ================================
+    // Set background and status based on latest payment
+    if (latestPaidMonthKey) {
+      tr.style.background = "#d4edda"; // green
+      statusCell.textContent = latestPaidDate ? formatDate(latestPaidDate) : "Paid";
+
+      // Pre-select month/year in dropdowns
+      const [month, year] = latestPaidMonthKey.split("-");
+      monthSelect.value = month;
+      yearSelect.value = year;
+    } else {
+      tr.style.background = "#f8d7da"; // red
+      statusCell.textContent = "Unpaid";
+    }
+
+    // ================================
+    // Update row when admin changes month/year manually
+    function updateStatus() {
+      const month = monthSelect.value;
+      const year = yearSelect.value;
+      if (!month || !year) {
+        tr.style.background = "#fff";
+        statusCell.textContent = "—";
+        return;
+      }
+      const monthKey = `${month}-${year}`;
+      const st = paymentsByUserMonth[u.id]?.[monthKey];
+      if (st === "paid") {
+        tr.style.background = "#d4edda";
+        const paidDate = paymentsByUserMonth[u.id][monthKey + "_date"];
+        statusCell.textContent = paidDate ? formatDate(paidDate) : "Paid";
+      } else {
+        tr.style.background = "#f8d7da";
+        statusCell.textContent = "Unpaid";
+      }
+    }
+
+    monthSelect.addEventListener("change", updateStatus);
+    yearSelect.addEventListener("change", updateStatus);
   });
 }
 
-tableBody.addEventListener("click", (e) => {
-  const btn = e.target.closest(".paid-btn");
-  if (!btn) return;
 
-  const userId = btn.dataset.id;
-  const user = users.find((u) => u.id === userId);
+tableBody.addEventListener("click", (e) => {
+  const paidBtn = e.target.closest(".paid-btn");
+  const unpaidBtn = e.target.closest(".unpaid-btn");
+  if (!paidBtn && !unpaidBtn) return;
+
+  const row = e.target.closest("tr");
+  const monthSelect = row.querySelector(".rowMonth");
+  const yearSelect = row.querySelector(".rowYear");
+  const userId = (paidBtn || unpaidBtn).dataset.id;
+  const user = users.find(u => u.id === userId);
   if (!user) return;
 
-  setPaid(user.id, user.name, user.surname);
+  const month = monthSelect.value;
+  const year = yearSelect.value;
+
+  if (!month || !year) {
+    return alert("Please select both month and year before marking Paid/Unpaid");
+  }
+
+  if (paidBtn) setPaid(user.id, user.name, user.surname, month, year);
+  if (unpaidBtn) setUnpaid(user.id, month, year);
 });
 
-async function setPaid(userId, name, surname) {
+async function setPaid(userId, name, surname, month, year) {
   try {
+    const monthKey = `${month}-${year}`;
     const res = await fetch(`${BASE_URL}/payments/paid`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, name, surname }),
+      body: JSON.stringify({ userId, name, surname, month, year }),
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Failed to mark as paid");
+    if (!res.ok) throw new Error(data.error);
 
-    const user = users.find(u => u.id === userId);
-    if (user) {
-      user.isPaid = true;
-      user.paidAt = data.paidAt ? new Date(data.paidAt) : new Date();
-    }
+    if (!paymentsByUserMonth[userId]) paymentsByUserMonth[userId] = {};
+    paymentsByUserMonth[userId][monthKey] = "paid";
+    paymentsByUserMonth[userId][monthKey + "_date"] = new Date(); // store paid date
 
     renderTable();
   } catch (err) {
-    console.error(err);
     alert(err.message);
   }
 }
 
-async function setUnpaid(userId) {
-  const user = users.find(u => u.id === userId);
-  if (!user) return alert("User not found");
-
+async function setUnpaid(userId, month, year) {
   try {
+    const user = users.find(u => u.id === userId);
+    const monthKey = `${month}-${year}`;
+
     const res = await fetch(`${BASE_URL}/payments/unpaid`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, name: user.name, surname: user.surname }),
+      body: JSON.stringify({
+        userId,
+        name: user.name,
+        surname: user.surname,
+        month,
+        year
+      }),
     });
 
     const data = await res.json();
-    if (!res.ok || !data.unpaidAt) throw new Error(data.error || "Failed to mark as unpaid");
+    if (!res.ok) throw new Error(data.error);
 
-    user.isPaid = false;
-    user.paidAt = null;
+    if (!paymentsByUserMonth[userId]) paymentsByUserMonth[userId] = {};
+    paymentsByUserMonth[userId][monthKey] = "unpaid";
+    paymentsByUserMonth[userId][monthKey + "_date"] = null;
 
     renderTable();
   } catch (err) {
-    console.error("Unpaid error:", err);
     alert(err.message);
   }
 }
@@ -256,44 +380,28 @@ function closeHistoryModal() {
 
 async function viewPaymentHistory(userId) {
   try {
-    const resPayments = await fetch(`${BASE_URL}/payments`);
-    if (!resPayments.ok) throw new Error("Failed to load payment history");
-
-    const paymentsData = await resPayments.json();
-    const userPayments = paymentsData[userId]?.history || [];
+    const res = await fetch(`${BASE_URL}/payments`);
+    const paymentsData = await res.json();
+    const history = paymentsData[userId]?.history || [];
 
     const tbody = document.querySelector("#historyTable tbody");
     tbody.innerHTML = "";
 
-    const paidRecords = userPayments
-  .filter((p) => p.status === "paid")
-  .map((p) => ({
-    name: p.name || "-",
-    surname: p.surname || "-",
-    date:
-      p.date?.toDate
-        ? p.date.toDate()
-        : p.date || null,
-  }))
-  .sort((a, b) => a.date - b.date);
+    history.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    if (paidRecords.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">No payment history</td></tr>`;
-    } else {
-      paidRecords.forEach((item) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${item.surname}</td>
-          <td>${item.name}</td>
-          <td>${formatDate(item.date)}</td>
-        `;
-        tbody.prepend(tr);
-      });
-    }
+    history.forEach(item => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${item.surname}</td>
+        <td>${item.name}</td>
+        <td>${item.monthKey || "No month"}</td>
+        <td>${formatDate(item.date)}</td>
+      `;
+      tbody.prepend(tr);
+    });
 
     document.getElementById("historyModal").style.display = "flex";
-  } catch (err) {
-    console.error(err);
+  } catch {
     alert("Failed to load payment history");
   }
 }
